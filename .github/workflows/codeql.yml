@@ -1,0 +1,51 @@
+name: "CodeQL Java Analysis"
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+  schedule:
+    - cron: '30 2 * * 1'  # 每週一 02:30 UTC 自動掃描
+
+jobs:
+  codeql:
+    name: CodeQL Scan Java
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    permissions:
+      security-events: write
+      contents: read
+      actions: read
+      packages: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: java-kotlin
+          build-mode: manual
+          queries: security-and-quality,security-experimental
+
+      - name: Manual build Java (compile all .java files)
+        shell: bash
+        run: |
+          echo "🔹 Compiling all Java files..."
+          find . -name "*.java" -exec javac {} +
+          echo "✅ Compilation finished."
+
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: "java-vulnerability-scan"
+          upload: always
